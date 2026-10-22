@@ -12,7 +12,6 @@ DESTINATARIO = os.environ.get('DESTINATARIO')
 # ===========================================================
 
 class ServidorLocal(BaseHTTPRequestHandler):
-class ServidorLocal(BaseHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, GET, HEAD, OPTIONS')
@@ -23,12 +22,10 @@ class ServidorLocal(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
-    # Render usa este método para verificar que el servidor está vivo
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
 
-    # Agregamos GET por si visitas la URL directamente en el navegador
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
