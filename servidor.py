@@ -2,8 +2,7 @@ import json
 import smtplib
 import os
 from email.mime.text import MIMEText
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 # ================= CONFIGURACIÓN DE CORREO =================
 # Las credenciales se leen desde las variables de entorno configuradas en Render
 REMITENTE = os.environ.get('REMITENTE')
@@ -32,7 +31,13 @@ class ServidorLocal(BaseHTTPRequestHandler):
         self.wfile.write(b"Servidor API funcionando correctamente")
 
     def do_POST(self):
-        longitud = int(self.headers['Content-Length'])
+        try:
+          longitud = int(self.headers.get('Content-Length', 0))
+          if longitud == 0:
+              self.send_response(400)
+               self.end_headers()
+            return
+
         datos_crudos = self.rfile.read(longitud)
         datos = json.loads(datos_crudos.decode('utf-8'))
 
@@ -70,4 +75,4 @@ puerto = int(os.environ.get('PORT', 8000))
 print(f"Servidor Python escuchando en el puerto {puerto}...")
 
 # 0.0.0.0 permite que la aplicación exponga el puerto a las interfaces de red de Render
-HTTPServer(('0.0.0.0', puerto), ServidorLocal).serve_forever()
+ThreadingHTTPServer(('0.0.0.0', puerto), ServidorLocal).serve_forever()
