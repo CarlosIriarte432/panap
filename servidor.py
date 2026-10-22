@@ -12,15 +12,27 @@ DESTINATARIO = os.environ.get('DESTINATARIO')
 # ===========================================================
 
 class ServidorLocal(BaseHTTPRequestHandler):
+class ServidorLocal(BaseHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'POST, GET, HEAD, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         super().end_headers()
 
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
+
+    # Render usa este método para verificar que el servidor está vivo
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
+
+    # Agregamos GET por si visitas la URL directamente en el navegador
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Servidor API funcionando correctamente")
 
     def do_POST(self):
         longitud = int(self.headers['Content-Length'])
